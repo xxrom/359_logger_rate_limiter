@@ -4,9 +4,9 @@ class Logger:
         """
         Initialize your data structure here.
         """
-        self.maxQueue = 10
+        self.logInterval = 10
         self.queue = [{}]
-        self.allMessages = {}
+        self.allMessagesNextPrint = {}
         self.currentTime = 0
 
     def addToLastQueue(self, message: str):
@@ -15,38 +15,31 @@ class Logger:
         else:
             self.queue[0][message] += 1
 
-    def addToAllMessages(self, message: str):
-        if message not in self.allMessages:
-            self.allMessages[message] = 1
-        else:
-            self.allMessages[message] += 1
-
-    def removeMessagesFromAllMessage(self, messageDict: dict):
-        for key in messageDict:
-            # print('remove >> %s' % key)
-            self.allMessages[key] -= messageDict[key]
-
-            if self.allMessages[key] <= 0:
-                del self.allMessages[key]
-
+    def addToAllMessages(self, message: str, timestamp: int):
+        if (message not in self.allMessagesNextPrint
+            or timestamp >= self.allMessagesNextPrint[message]):
+            self.allMessagesNextPrint[message] = timestamp + self.logInterval
 
     def increaseQueue(self, timestamp):
         diff = timestamp - self.currentTime
         self.currentTime = timestamp
 
-        for i in range(diff):
-            self.queue.insert(0,{})
+        if diff < self.logInterval:
+            for i in range(diff):
+                self.queue.insert(0,{})
 
-        numberForDeletingItems = len(self.queue) - self.maxQueue
-        if numberForDeletingItems > 0:
-            for i in range(numberForDeletingItems):
-                # print(' >>> Pop =)')
-                removeMessages = self.queue.pop()
-                self.removeMessagesFromAllMessage(removeMessages)
+            numberForDeletingItems = len(self.queue) - self.logInterval
+            if numberForDeletingItems > 0:
+                for i in range(numberForDeletingItems):
+                    self.queue.pop()
+        else:
+            self.queue = [{}]
+            self.allMessagesNextPrint = {}
 
-    def missedMessageInAllMessages(self, message: str):
-        if message in self.allMessages:
-            return False
+    def missedMessageInAllMessages(self, message: str, timestamp: int):
+        if message in self.allMessagesNextPrint:
+            if timestamp < self.allMessagesNextPrint[message]:
+                return False
 
         return True
 
@@ -58,28 +51,14 @@ class Logger:
         """
         isShouldBePrinted = False
 
-        if timestamp == self.currentTime:
-            if self.missedMessageInAllMessages(message):
-                isShouldBePrinted = True
-
-            self.addToLastQueue(message)
-            self.addToAllMessages(message)
-
-        else:
+        if timestamp != self.currentTime:
             self.increaseQueue(timestamp)
-            print('===========')
-            print(self.queue)
-            print(self.allMessages)
 
-            if self.missedMessageInAllMessages(message):
-                isShouldBePrinted = True
+        if self.missedMessageInAllMessages(message, timestamp):
+            isShouldBePrinted = True
 
-            self.addToLastQueue(message)
-            self.addToAllMessages(message)
-
-        print('----------')
-        print(self.queue)
-        print(self.allMessages)
+        self.addToLastQueue(message)
+        self.addToAllMessages(message, timestamp)
 
         return isShouldBePrinted
 
@@ -108,20 +87,45 @@ message2 = '0 hello'
 # print(my.shouldPrintMessage(timestamp2, message2))
 # print(my.shouldPrintMessage(timestamp2, message2))
 
-# logging string "foo" at timestamp 1
-print(my.shouldPrintMessage(1, "foo"))
+# -----------------------------
+# # logging string "foo" at timestamp 1
+# print(my.shouldPrintMessage(1, "foo"))
 
-# logging string "bar" at timestamp 2
-print(my.shouldPrintMessage(2,"bar")
-)
-# logging string "foo" at timestamp 3
-print(my.shouldPrintMessage(3,"foo"))
+# # logging string "bar" at timestamp 2
+# print(my.shouldPrintMessage(2,"bar")
+# )
+# # logging string "foo" at timestamp 3
+# print(my.shouldPrintMessage(3,"foo"))
 
-# logging string "bar" at timestamp 8
-print(my.shouldPrintMessage(8,"bar"))
+# # logging string "bar" at timestamp 8
+# print(my.shouldPrintMessage(8,"bar"))
 
-# logging string "foo" at timestamp 10
-print(my.shouldPrintMessage(10,"foo"))
+# # logging string "foo" at timestamp 10
+# print(my.shouldPrintMessage(10,"foo"))
 
-# logging string "foo" at timestamp 11
-print(my.shouldPrintMessage(11,"foo"))
+# # logging string "foo" at timestamp 11
+# print(my.shouldPrintMessage(11,"foo"))
+
+# ----------------
+# # logging string "foo" at timestamp 1
+# print(my.shouldPrintMessage(100, "bug"))
+
+# # logging string "bar" at timestamp 2
+# print(my.shouldPrintMessage(10002000,"the longest message ever!"))
+
+#----------------
+print(my.shouldPrintMessage(0,"A"))
+print(my.shouldPrintMessage(0,"B"))
+print(my.shouldPrintMessage(0,"C"))
+print(my.shouldPrintMessage(0,"A"))
+print(my.shouldPrintMessage(0,"B"))
+print(my.shouldPrintMessage(0,"C"))
+print(my.shouldPrintMessage(11,"A"))
+print(my.shouldPrintMessage(11,"B"))
+print(my.shouldPrintMessage(11,"C"))
+print(my.shouldPrintMessage(11,"A"))
+print(my.shouldPrintMessage(12,"A"))
+# true,true,true,false,false,false,true,true,true,false
+
+# Runtime: 224 ms, faster than 24.23% of Python3 online submissions for Logger Rate Limiter.
+# Memory Usage: 19.8 MB, less than 20.26% of Python3 online submissions for Logger Rate Limiter.
