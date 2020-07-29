@@ -5,41 +5,25 @@ class Logger:
         Initialize your data structure here.
         """
         self.logInterval = 10
-        self.queue = [{}]
-        self.allMessagesNextPrint = {}
         self.currentTime = 0
-
-    def addToLastQueue(self, message: str):
-        if message not in self.queue[0]:
-            self.queue[0][message] = 1
-        else:
-            self.queue[0][message] += 1
+        self.allMessagesNextPrint = {}
 
     def addToAllMessages(self, message: str, timestamp: int):
         if (message not in self.allMessagesNextPrint
             or timestamp >= self.allMessagesNextPrint[message]):
             self.allMessagesNextPrint[message] = timestamp + self.logInterval
 
-    def increaseQueue(self, timestamp):
+    def updateTime(self, timestamp):
         diff = timestamp - self.currentTime
-        self.currentTime = timestamp
 
-        if diff < self.logInterval:
-            for i in range(diff):
-                self.queue.insert(0,{})
-
-            numberForDeletingItems = len(self.queue) - self.logInterval
-            if numberForDeletingItems > 0:
-                for i in range(numberForDeletingItems):
-                    self.queue.pop()
-        else:
-            self.queue = [{}]
+        if diff > self.logInterval:
             self.allMessagesNextPrint = {}
 
+        self.currentTime = timestamp
+
     def missedMessageInAllMessages(self, message: str, timestamp: int):
-        if message in self.allMessagesNextPrint:
-            if timestamp < self.allMessagesNextPrint[message]:
-                return False
+        if message in self.allMessagesNextPrint and timestamp < self.allMessagesNextPrint[message]:
+            return False
 
         return True
 
@@ -52,12 +36,11 @@ class Logger:
         isShouldBePrinted = False
 
         if timestamp != self.currentTime:
-            self.increaseQueue(timestamp)
+            self.updateTime(timestamp)
 
         if self.missedMessageInAllMessages(message, timestamp):
             isShouldBePrinted = True
 
-        self.addToLastQueue(message)
         self.addToAllMessages(message, timestamp)
 
         return isShouldBePrinted
@@ -125,7 +108,10 @@ print(my.shouldPrintMessage(11,"B"))
 print(my.shouldPrintMessage(11,"C"))
 print(my.shouldPrintMessage(11,"A"))
 print(my.shouldPrintMessage(12,"A"))
-# true,true,true,false,false,false,true,true,true,false
+# true,true,true,false,false,false,true,true,true,false,false
 
 # Runtime: 224 ms, faster than 24.23% of Python3 online submissions for Logger Rate Limiter.
 # Memory Usage: 19.8 MB, less than 20.26% of Python3 online submissions for Logger Rate Limiter.
+
+# Runtime: 164 ms, faster than 54.95% of Python3 online submissions for Logger Rate Limiter.
+# Memory Usage: 19.7 MB, less than 67.97% of Python3 online submissions for Logger Rate Limiter.
